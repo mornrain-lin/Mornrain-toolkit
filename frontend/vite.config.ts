@@ -6,6 +6,8 @@ import process from "process"
 
 // https://vite.dev/config/
 export default defineConfig({
+  // On GitHub Pages the site is served from /toolkit/, so set the base accordingly.
+  base: process.env.GH_PAGES === 'true' ? '/toolkit/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

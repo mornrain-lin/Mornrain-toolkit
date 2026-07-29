@@ -1,6 +1,6 @@
 {
   "name": "ToolKit 工具箱",
   "app_slug": "toolkit",
-  "version_description": "feat: 纯前端在线工具箱",
+  "version_description": "chore: 发布到 GitHub 并清理仓库",
   "preview_type": "pc"
 }
