@@ -1,6 +1,6 @@
 {
-  "name": "ToolKit 工具箱",
+  "name": "Mornrain ToolKit",
   "app_slug": "toolkit",
-  "version_description": "chore: 发布到 GitHub 并清理仓库",
+  "version_description": "feat: README 配图 + Actions 自动部署",
   "preview_type": "pc"
 }

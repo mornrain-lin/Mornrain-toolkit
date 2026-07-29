@@ -4,4 +4,9 @@ export const site = {
   description:
     'ToolKit 是一个纯前端、开源免费的在线工具集合，所有处理都在你的浏览器本地完成，文件不会上传到任何服务器。包含图片、文本、开发、换算四大类共 17 个实用工具。',
   repoUrl: 'https://github.com/mornrain-lin/toolkit',
+  author: 'mornrain.lin',
+  links: {
+    website: 'https://mornrain.com',
+    websiteCn: 'https://mornrain.cn',
+  },
 }

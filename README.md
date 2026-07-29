@@ -109,6 +109,12 @@ pnpm build
 
 ---
 
+## 开发者
+
+- 开发者：mornrain.lin
+- 官网：<https://mornrain.com> · <https://mornrain.cn>
+- 仓库：<https://github.com/mornrain-lin/toolkit>
+
 ## License
 
-[MIT](./LICENSE) © Mornrain
+[MIT](./LICENSE) © mornrain.lin

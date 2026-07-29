@@ -110,6 +110,35 @@ export default function Home() {
             <Github className="h-3.5 w-3.5" /> GitHub
           </a>
         </p>
+        <p className="mt-2">
+          开发者{' '}
+          <a
+            href={site.links.website}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground"
+          >
+            {site.author}
+          </a>{' '}
+          · 官网{' '}
+          <a
+            href={site.links.website}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground"
+          >
+            mornrain.com
+          </a>{' '}
+          ·{' '}
+          <a
+            href={site.links.websiteCn}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground"
+          >
+            mornrain.cn
+          </a>
+        </p>
       </footer>
     </div>
   )
