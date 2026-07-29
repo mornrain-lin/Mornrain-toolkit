@@ -1,5 +1,0 @@
-[[app]]
-name = "frontend"
-cmd = "cd frontend && pnpm install && pnpm dev"
-autoRun = true
-port = 5173

@@ -1,24 +1,28 @@
-# dependencies
-node_modules/
-.pnpm-store/
+# Environment / template scaffolding (not part of the app)
+.templates/
+.codebuddy/
+.genie/
+.cloudstudio
 
-# build output
+# Dependencies
+node_modules/
+
+# Build output
 dist/
 dist-ssr/
-*.local
 
-# logs
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
 
-# editor / os
-.vscode/
-.idea/
+# OS / editor
 .DS_Store
+.idea/
+.vscode/
 *.swp
-
-# env
-.env
-.env.*
-!.env.example
