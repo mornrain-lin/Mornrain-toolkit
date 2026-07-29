@@ -1,0 +1,230 @@
+/* 互动影游 · 选项皮肤与叠层样式（组件级视觉重做）
+ *
+ * 设计语言：分层玻璃面 + 发丝级描边 + 柔和景深 + accent 作为"点睛高光"（左条 / chevron / hover 光晕），
+ * 而非满框描边。所有交互统一 .18s 缓动，hover 有轻微抬升与光晕，focus 可见。
+ * 配色仍全部走主题 token（--ifg-*），换主题即整体换色。
+ */
+
+.ifg-overlay-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---- 选项交互基类 ---- */
+.ifg-choice {
+  pointer-events: auto;
+  cursor: pointer;
+  border: none;
+  color: var(--ifg-choice-fg, #fff);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    filter 0.18s ease;
+}
+.ifg-choice:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ifg-accent);
+}
+
+/* 浮层胶囊（overlay 布局）：单行省略，hover 轻微放大抬升 */
+.ifg-choice-float {
+  white-space: nowrap;
+  max-width: 42vw;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.ifg-choice-float:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.06); }
+.ifg-choice-float:active { transform: translateY(0) scale(0.98); }
+
+/* art：Miora 装饰底图作背景，文字前端叠加居中 */
+.ifg-choice-art {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  min-height: 56px;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.5));
+}
+.ifg-choice-art:hover { transform: scale(1.04); filter: drop-shadow(0 5px 14px rgba(0, 0, 0, 0.55)) brightness(1.06); }
+.ifg-choice-art:active { transform: scale(0.98); }
+.ifg-choice-art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+.ifg-choice-label {
+  position: relative;
+  z-index: 1;
+}
+.ifg-choice-art .ifg-choice-label {
+  padding: 10px 22px;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* ---- bar 布局：竖向堆叠整行选项 ---- */
+.ifg-choice-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 24px 4px;
+}
+.ifg-choice-row {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: normal;
+  text-align: left;
+}
+.ifg-choice-row .ifg-choice-text { flex: 1; }
+.ifg-choice-row:hover { transform: translateY(-1px); }
+.ifg-choice-row:active { transform: translateY(0); }
+.ifg-choice-chevron {
+  color: var(--ifg-accent);
+  opacity: 0.5;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.ifg-choice-row:hover .ifg-choice-chevron { opacity: 1; transform: translateX(3px); }
+
+/* ---- 皮肤：plain（干净玻璃胶囊） ---- */
+.ifg-skin-plain {
+  background: var(--ifg-choice-bg);
+  border: 1px solid var(--ifg-choice-border);
+  border-radius: var(--ifg-radius);
+  padding: 12px 20px;
+  color: var(--ifg-choice-fg);
+  backdrop-filter: blur(10px) saturate(1.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+.ifg-skin-plain:hover {
+  border-color: var(--ifg-accent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px color-mix(in srgb, var(--ifg-accent) 40%, transparent);
+}
+
+/* ---- 皮肤：ribbon（左侧 accent 光条 + 玻璃底，取代旧的上下金线） ---- */
+.ifg-skin-ribbon {
+  position: relative;
+  background: var(--ifg-choice-bg);
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 42%, transparent);
+  border-radius: var(--ifg-radius);
+  padding: 12px 20px 12px 24px;
+  color: var(--ifg-choice-fg);
+  backdrop-filter: blur(10px) saturate(1.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.ifg-skin-ribbon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--ifg-accent);
+  opacity: 0.85;
+  transition: width 0.18s ease;
+}
+.ifg-skin-ribbon:hover {
+  border-color: var(--ifg-accent);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45),
+    0 0 20px color-mix(in srgb, var(--ifg-accent) 22%, transparent);
+}
+.ifg-skin-ribbon:hover::before { width: 5px; }
+
+/* ---- 皮肤：plaque（描金匾额，内嵌高光边） ---- */
+.ifg-skin-plaque {
+  position: relative;
+  background: var(--ifg-choice-bg);
+  border: 1.5px solid var(--ifg-accent);
+  border-radius: 12px;
+  padding: 13px 26px;
+  color: var(--ifg-choice-fg);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px color-mix(in srgb, var(--ifg-accent) 20%, transparent);
+}
+.ifg-skin-plaque:hover {
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.55),
+    0 0 22px color-mix(in srgb, var(--ifg-accent) 30%, transparent);
+}
+
+/* hotspot 热区 */
+.ifg-hotspot {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.ifg-hotspot:hover {
+  background: color-mix(in srgb, var(--ifg-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ifg-accent) 50%, transparent);
+}
+.ifg-hotspot-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--ifg-choice-fg);
+  font-size: 14px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* ---- 说话人铭牌 ---- */
+.ifg-nameplate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ifg-speaker-fg);
+  background: var(--ifg-text-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+.ifg-nameplate::before {
+  content: "";
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ifg-accent);
+}
+
+/* ---- 对白气泡卡 ---- */
+.ifg-dialogue {
+  display: inline-block;
+  max-width: 80%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  line-height: 1.7;
+  background: var(--ifg-text-bg);
+  color: var(--ifg-text-fg);
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 22%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* 字型档 */
+.ifg-font-serif { font-family: "Songti SC", "SimSun", serif; }
+.ifg-font-sans { font-family: inherit; }

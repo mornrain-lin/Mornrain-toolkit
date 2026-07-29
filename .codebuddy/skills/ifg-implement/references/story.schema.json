@@ -1,0 +1,336 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geniekit.dev/schemas/story.schema.json",
+  "title": "Interactive Film Game Story Schema",
+  "description": "JSON Schema for IFG (Interactive Film Game) story.json - the data contract between data producers and the React engine",
+  "type": "object",
+  "required": ["meta", "nodes"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "作品元信息",
+      "required": ["title", "version", "start"],
+      "properties": {
+        "title": { "type": "string", "description": "作品标题，兼作存档命名空间 key" },
+        "version": { "type": "string", "description": "数据版本号" },
+        "start": { "type": "string", "description": "入口节点 id，必须存在于 nodes 中" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "故事级全局配置（可选）",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "locale": {
+          "type": "string",
+          "enum": ["zh-CN", "en"],
+          "description": "引擎 UI 语言（按钮/面板/结局标签等），由创作方指定；不填落 zh-CN 兜底。剧情文案本身不受此字段影响"
+        },
+        "poster": { "$ref": "#/definitions/HttpUrl", "description": "封面图 URL" },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["light", "dark"] },
+            "accent": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "preset": {
+              "type": "string",
+              "enum": ["minimal", "horror", "scifi", "fantasy", "romance"],
+              "description": "成套游戏风格主题：一行整体换皮（选项/道具/文字/HUD/结局卡）。不填落 minimal 兜底"
+            }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "properties": {
+            "textSpeed": { "type": "string", "enum": ["slow", "normal", "fast", "instant"] }
+          }
+        },
+        "audio": {
+          "type": "object",
+          "properties": {
+            "bgm": { "$ref": "#/definitions/HttpUrl" },
+            "bgmVolume": { "type": "number", "minimum": 0, "maximum": 1 },
+            "sfxVolume": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "backlog": { "type": "boolean" },
+            "gallery": { "type": "boolean" },
+            "inventory": { "type": "boolean" },
+            "autosave": { "type": "boolean" },
+            "saveSlots": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "skin": {
+          "type": "object",
+          "properties": {
+            "choiceStyle": { "type": "string", "enum": ["plain", "ribbon", "plaque"] },
+            "frame": { "$ref": "#/definitions/HttpUrl", "description": "全局共享装饰底图 URL" },
+            "font": { "type": "string", "enum": ["sans", "serif"] },
+            "accent": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
+        },
+        "motion": {
+          "type": "object",
+          "properties": {
+            "transition": {
+              "type": "string",
+              "enum": ["fade", "fade-black", "fade-white", "slide-up", "slide-down", "slide-left", "slide-right", "zoom", "blur", "dissolve", "glitch", "ripple", "none"]
+            },
+            "choiceReveal": {
+              "type": "string",
+              "enum": ["stagger-fade", "slide-up", "scale-in", "typewriter", "glow-pulse"]
+            },
+            "textStyle": { "type": "string", "enum": ["banner", "bubble", "centered"] },
+            "intensity": { "type": "string", "enum": ["subtle", "normal", "cinematic"] },
+            "reducedMotion": { "type": "string", "enum": ["auto", "on", "off"] }
+          }
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "description": "状态变量初值。key 为变量名，value 为初值",
+      "additionalProperties": {
+        "type": ["boolean", "number", "string"]
+      }
+    },
+    "items": {
+      "type": "array",
+      "description": "道具库",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "image": { "$ref": "#/definitions/HttpUrl", "description": "道具图 URL（可选）" }
+        }
+      }
+    },
+    "characters": {
+      "type": "array",
+      "description": "角色库",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "image": { "$ref": "#/definitions/HttpUrl", "description": "角色参考图 URL（可选）" }
+        }
+      }
+    },
+    "nodes": {
+      "type": "object",
+      "description": "剧情节点字典。key 为节点 id，value 为节点对象",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/definitions/Node"
+      }
+    }
+  },
+  "definitions": {
+    "HttpUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://",
+      "description": "可公开访问的 HTTP(S) URL"
+    },
+    "Point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "description": "相对媒体框的归一化坐标（0~1）",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "Region": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "description": "相对媒体框的归一化矩形区域（0~1）",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" }
+      }
+    },
+    "Condition": {
+      "description": "结构化条件（引擎可安全求值）。叶子为比较 / has / visited，可用 and/or/not 递归组合",
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["op", "var", "value"],
+          "properties": {
+            "op": { "type": "string", "enum": [">=", ">", "<=", "<", "==", "!="] },
+            "var": { "type": "string" },
+            "value": { "type": ["boolean", "number", "string"] }
+          }
+        },
+        {
+          "required": ["op", "item"],
+          "properties": {
+            "op": { "const": "has" },
+            "item": { "type": "string" }
+          }
+        },
+        {
+          "required": ["op", "node"],
+          "properties": {
+            "op": { "const": "visited" },
+            "node": { "type": "string" }
+          }
+        },
+        {
+          "required": ["and"],
+          "properties": { "and": { "type": "array", "items": { "$ref": "#/definitions/Condition" } } }
+        },
+        {
+          "required": ["or"],
+          "properties": { "or": { "type": "array", "items": { "$ref": "#/definitions/Condition" } } }
+        },
+        {
+          "required": ["not"],
+          "properties": { "not": { "$ref": "#/definitions/Condition" } }
+        }
+      ]
+    },
+    "Effect": {
+      "description": "状态变更（op 结构）：set/inc/dec 作用于变量，add/remove 作用于道具",
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["op", "var", "value"],
+          "properties": {
+            "op": { "const": "set" },
+            "var": { "type": "string" },
+            "value": { "type": ["boolean", "number", "string"] }
+          }
+        },
+        {
+          "required": ["op", "var"],
+          "properties": {
+            "op": { "type": "string", "enum": ["inc", "dec"] },
+            "var": { "type": "string" },
+            "value": { "type": "number", "description": "增减量，缺省 1" }
+          }
+        },
+        {
+          "required": ["op", "item"],
+          "properties": {
+            "op": { "type": "string", "enum": ["add", "remove"] },
+            "item": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "Media": {
+      "type": "object",
+      "required": ["type", "src"],
+      "properties": {
+        "type": { "type": "string", "enum": ["video"] },
+        "src": { "$ref": "#/definitions/HttpUrl" },
+        "subtitle": { "$ref": "#/definitions/HttpUrl" }
+      }
+    },
+    "Choice": {
+      "type": "object",
+      "required": ["label", "next"],
+      "properties": {
+        "label": { "type": "string", "description": "选项显示文字" },
+        "next": { "type": "string", "description": "选中后跳转的节点 id" },
+        "condition": { "$ref": "#/definitions/Condition" },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Effect" }
+        },
+        "skin": { "type": "string", "enum": ["plain", "ribbon", "plaque"], "description": "overlay 选项皮肤（覆盖 config.skin.choiceStyle）" },
+        "art": { "$ref": "#/definitions/HttpUrl", "description": "overlay 选项专属装饰底图 URL" },
+        "hint": { "type": "boolean", "description": "hotspots 是否显示可见提示" },
+        "anchor": { "$ref": "#/definitions/Point" },
+        "region": { "$ref": "#/definitions/Region" }
+      }
+    },
+    "Node": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["start", "scene", "choice", "ending", "interaction"]
+        },
+        "text": { "type": "string" },
+        "media": { "$ref": "#/definitions/Media" },
+        "bgm": { "$ref": "#/definitions/HttpUrl" },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Effect" }
+        },
+        "next": { "type": "string" },
+        "choices": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/Choice" }
+        },
+        "clipDuration": { "type": "number" },
+        "choiceAt": { "type": "number" },
+        "transition": {
+          "type": "string",
+          "enum": ["fade", "fade-black", "fade-white", "slide-up", "slide-down", "slide-left", "slide-right", "zoom", "blur", "dissolve", "glitch", "ripple", "none"]
+        },
+        "textStyle": { "type": "string", "enum": ["banner", "bubble", "centered"] },
+        "typewriter": { "type": "boolean", "description": "是否逐字打字机（默认 false，字幕整句直显）" },
+        "speaker": { "type": "string" },
+        "fx": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "节点触发的瞬时表现反馈列表：屏幕动效、设备振动，或 sfx:<http(s)音频URL>。不修改剧情状态"
+        },
+        "ending_type": { "type": "string", "enum": ["good", "bad", "hidden", "normal"] },
+        "interaction": {
+          "type": "string",
+          "enum": ["tap", "longpress", "hold-release", "swipe", "drag", "rotate", "rapidtap", "rhythm", "trace", "hotspots"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "start" } } },
+          "then": {
+            "required": ["next"],
+            "not": { "required": ["choices"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "scene" } } },
+          "then": { "not": { "required": ["next", "choices"] } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "choice" } } },
+          "then": {
+            "required": ["choices"],
+            "not": { "required": ["next"] }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "ending" } } },
+          "then": {
+            "required": ["ending_type"],
+            "allOf": [
+              { "not": { "required": ["next"] } },
+              { "not": { "required": ["choices"] } }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "interaction" } } },
+          "then": { "required": ["interaction", "next"] }
+        }
+      ]
+    }
+  }
+}

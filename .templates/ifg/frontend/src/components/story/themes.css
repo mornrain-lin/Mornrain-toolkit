@@ -1,0 +1,225 @@
+/* 互动影游 · 成套游戏风格主题（Theme Preset）
+ *
+ * token 驱动换肤：PlayScreen 根容器挂 data-ifg-theme="xxx"，
+ * 下面每套主题定义一组语义 token，选项/道具/文字/HUD/结局卡的 CSS 只引用 token，
+ * 换根 attribute 即整体换皮。config.skin.accent 等单点覆盖仍走内联 style（优先级更高）。
+ *
+ * :root 提供兜底（等价 minimal），使不写 theme.preset 的存量剧本仍好看。
+ */
+
+:root,
+[data-ifg-theme="minimal"] {
+  --ifg-accent: #9aa4b2;
+  --ifg-choice-bg: rgba(22, 24, 30, 0.72);
+  --ifg-choice-border: rgba(255, 255, 255, 0.28);
+  --ifg-choice-fg: #f4f6f8;
+  --ifg-item-bg: rgba(255, 255, 255, 0.08);
+  --ifg-item-border: rgba(255, 255, 255, 0.20);
+  --ifg-item-fg: #e8eaed;
+  --ifg-text-bg: rgba(0, 0, 0, 0.55);
+  --ifg-text-fg: #ffffff;
+  --ifg-speaker-fg: #cbd5e1;
+  --ifg-hud-bg: rgba(30, 33, 42, 0.72);
+  --ifg-hud-fg: #e8eaed;
+  --ifg-ending-bg: rgba(20, 22, 28, 0.92);
+  --ifg-ending-border: rgba(255, 255, 255, 0.16);
+  --ifg-ending-fg: #f4f6f8;
+  --ifg-radius: 10px;
+}
+
+/* horror：恐怖/悬疑 —— 深炭玻璃 + 暗金点睛 + 血红铭牌，沉郁不土 */
+[data-ifg-theme="horror"] {
+  --ifg-accent: #c9a24b;
+  --ifg-choice-bg: rgba(18, 13, 11, 0.72);
+  --ifg-choice-border: rgba(201, 162, 75, 0.32);
+  --ifg-choice-fg: #f2e6cc;
+  --ifg-item-bg: rgba(20, 13, 11, 0.72);
+  --ifg-item-border: rgba(201, 162, 75, 0.28);
+  --ifg-item-fg: #ecd9b0;
+  --ifg-text-bg: rgba(10, 6, 6, 0.55);
+  --ifg-text-fg: #f3e8d8;
+  --ifg-speaker-fg: #e0a06a;
+  --ifg-hud-bg: rgba(22, 15, 13, 0.72);
+  --ifg-hud-fg: #e8d4b0;
+  --ifg-ending-bg: rgba(18, 11, 10, 0.92);
+  --ifg-ending-border: rgba(201, 162, 75, 0.40);
+  --ifg-ending-fg: #f0d9b5;
+  --ifg-radius: 8px;
+}
+
+/* scifi：科幻/赛博 —— 霓虹青描边，冷色发光，直角 */
+[data-ifg-theme="scifi"] {
+  --ifg-accent: #22d3ee;
+  --ifg-choice-bg: rgba(8, 20, 32, 0.78);
+  --ifg-choice-border: rgba(34, 211, 238, 0.55);
+  --ifg-choice-fg: #cffafe;
+  --ifg-item-bg: rgba(8, 25, 38, 0.82);
+  --ifg-item-border: rgba(34, 211, 238, 0.50);
+  --ifg-item-fg: #a5f3fc;
+  --ifg-text-bg: rgba(3, 10, 18, 0.60);
+  --ifg-text-fg: #e0f7fb;
+  --ifg-speaker-fg: #67e8f9;
+  --ifg-hud-bg: rgba(8, 22, 34, 0.78);
+  --ifg-hud-fg: #a5f3fc;
+  --ifg-ending-bg: rgba(4, 14, 24, 0.94);
+  --ifg-ending-border: rgba(34, 211, 238, 0.50);
+  --ifg-ending-fg: #cffafe;
+  --ifg-radius: 4px;
+}
+
+/* fantasy：奇幻/RPG —— 描金卷轴框，暖色，宝石感道具 */
+[data-ifg-theme="fantasy"] {
+  --ifg-accent: #d4a638;
+  --ifg-choice-bg: linear-gradient(180deg, rgba(58, 42, 20, 0.86), rgba(38, 26, 12, 0.92));
+  --ifg-choice-border: rgba(212, 166, 56, 0.65);
+  --ifg-choice-fg: #f7ecd0;
+  --ifg-item-bg: rgba(48, 34, 60, 0.80);
+  --ifg-item-border: rgba(168, 132, 255, 0.55);
+  --ifg-item-fg: #ecd9a8;
+  --ifg-text-bg: rgba(20, 12, 6, 0.58);
+  --ifg-text-fg: #f7ecd0;
+  --ifg-speaker-fg: #e8c874;
+  --ifg-hud-bg: rgba(40, 28, 14, 0.75);
+  --ifg-hud-fg: #ecd9a8;
+  --ifg-ending-bg: rgba(30, 20, 10, 0.94);
+  --ifg-ending-border: rgba(212, 166, 56, 0.60);
+  --ifg-ending-fg: #f7ecd0;
+  --ifg-radius: 8px;
+}
+
+/* romance：都市言情 —— 干净留白，粉柔色，圆润气泡 */
+[data-ifg-theme="romance"] {
+  --ifg-accent: #f472b6;
+  --ifg-choice-bg: rgba(255, 240, 246, 0.90);
+  --ifg-choice-border: rgba(244, 114, 182, 0.50);
+  --ifg-choice-fg: #6b2a45;
+  --ifg-item-bg: rgba(255, 235, 243, 0.92);
+  --ifg-item-border: rgba(244, 114, 182, 0.45);
+  --ifg-item-fg: #8a3a5e;
+  --ifg-text-bg: rgba(40, 20, 30, 0.50);
+  --ifg-text-fg: #fff0f6;
+  --ifg-speaker-fg: #f9a8d4;
+  --ifg-hud-bg: rgba(255, 235, 243, 0.85);
+  --ifg-hud-fg: #8a3a5e;
+  --ifg-ending-bg: rgba(255, 240, 246, 0.95);
+  --ifg-ending-border: rgba(244, 114, 182, 0.50);
+  --ifg-ending-fg: #6b2a45;
+  --ifg-radius: 14px;
+}
+
+/* HUD / 跳过等壳层按钮：吃 hud token（覆盖 shadcn Button 的中性配色） */
+.ifg-hud-btn {
+  background: var(--ifg-hud-bg) !important;
+  color: var(--ifg-hud-fg) !important;
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 28%, transparent) !important;
+  backdrop-filter: blur(10px) saturate(1.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+}
+.ifg-hud-btn:hover {
+  filter: brightness(1.08);
+  border-color: var(--ifg-accent) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 壳层页面（标题页 / 结局图鉴）：深色基底 + 顶部 accent 微光，
+   与播放页共用同一套主题 token，避免壳层用 shadcn 中性色显得割裂。 */
+.ifg-stage-bg {
+  background:
+    radial-gradient(130% 85% at 50% -12%, color-mix(in srgb, var(--ifg-accent) 16%, transparent), transparent 62%),
+    radial-gradient(90% 60% at 50% 115%, color-mix(in srgb, var(--ifg-accent) 8%, transparent), transparent 55%),
+    #0b0e13;
+}
+
+/* 标题装饰分隔线：一段发光的 accent 短线 */
+.ifg-accent-rule {
+  height: 2px;
+  width: 64px;
+  border-radius: 999px;
+  background: var(--ifg-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ifg-accent) 70%, transparent);
+}
+
+/* 主题化菜单按钮：覆盖 shadcn 中性配色，统一吃 accent */
+.ifg-menu-primary {
+  background: var(--ifg-accent) !important;
+  color: #0b0e13 !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--ifg-accent) 38%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.ifg-menu-primary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--ifg-accent) 50%, transparent);
+}
+.ifg-menu-secondary {
+  background: color-mix(in srgb, var(--ifg-accent) 12%, transparent) !important;
+  color: var(--ifg-choice-fg) !important;
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 45%, transparent) !important;
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.ifg-menu-secondary:hover {
+  border-color: var(--ifg-accent) !important;
+  background: color-mix(in srgb, var(--ifg-accent) 20%, transparent) !important;
+  transform: translateY(-1px);
+}
+.ifg-menu-ghost {
+  background: transparent !important;
+  color: color-mix(in srgb, var(--ifg-choice-fg) 72%, transparent) !important;
+  border: 1px solid transparent !important;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.ifg-menu-ghost:hover {
+  color: var(--ifg-choice-fg) !important;
+  background: color-mix(in srgb, var(--ifg-accent) 10%, transparent) !important;
+}
+
+/* 主题化弹窗（设置 / 存档 / 回溯）：Dialog 经 Portal 挂到 <body>，脱离 PlayScreen
+   的 data-ifg-theme 容器，因此 DialogContent 自身挂 data-ifg-theme 取当前主题 token。
+   吃 ending token，用 !important 压过 shadcn DialogContent 的 bg-background / border。 */
+.ifg-dialog {
+  background: var(--ifg-ending-bg) !important;
+  color: var(--ifg-ending-fg) !important;
+  border: 1px solid var(--ifg-ending-border) !important;
+  border-radius: var(--ifg-radius) !important;
+  backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 16px 56px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 存档 / 读档行：accent 微填充 + 细边，替代 shadcn 中性 border */
+.ifg-dialog-row {
+  background: color-mix(in srgb, var(--ifg-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 22%, transparent);
+}
+
+/* 分段选择（文本速度）：默认弱 accent 底 + accent 描边，选中态实心 accent 填充 */
+.ifg-seg {
+  background: color-mix(in srgb, var(--ifg-accent) 10%, transparent);
+  color: color-mix(in srgb, var(--ifg-ending-fg) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ifg-accent) 30%, transparent);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.ifg-seg:hover {
+  border-color: var(--ifg-accent);
+  color: var(--ifg-ending-fg);
+}
+.ifg-seg-active {
+  background: var(--ifg-accent) !important;
+  color: #0b0e13 !important;
+  border-color: transparent !important;
+}
+
+/* 音量滑条：shadcn 默认 track=muted / range=primary，弹窗脱离 dark 容器后会取亮色变量
+   导致已填充暗、未填充亮（视觉反向）。这里用主题 token 接管：轨道暗、已填充 accent。 */
+.ifg-slider [data-slot="slider-track"] {
+  background: color-mix(in srgb, var(--ifg-accent) 20%, transparent) !important;
+}
+.ifg-slider [data-slot="slider-range"] {
+  background: var(--ifg-accent) !important;
+}
+.ifg-slider [data-slot="slider-thumb"] {
+  border-color: var(--ifg-accent) !important;
+}

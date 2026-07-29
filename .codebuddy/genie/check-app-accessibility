@@ -1,0 +1,114 @@
+#!/bin/bash
+# 应用可访问性检测工具
+# 纯检测脚本，供其他脚本调用
+#
+# 用法: check-app-accessibility [--wait SECONDS] [--retries N] [--interval SECONDS] [--url URL]
+#
+# 退出码:
+#   0 - 应用可访问
+#   1 - 应用不可访问（错误信息输出到 stdout）
+#
+# 示例:
+#   ./check-app-accessibility                    # 默认参数
+#   ./check-app-accessibility --wait 3           # 等待 3 秒后开始检测
+#   error=$(./check-app-accessibility) || echo "失败: $error"
+
+set -uo pipefail
+
+# ============================================================================
+# 参数解析
+# ============================================================================
+
+WAIT_SECONDS=5
+MAX_RETRIES=3
+RETRY_INTERVAL=3
+APP_URL="http://localhost:55221"
+TIMEOUT=10
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --wait)       WAIT_SECONDS="$2"; shift 2 ;;
+        --retries)    MAX_RETRIES="$2"; shift 2 ;;
+        --interval)   RETRY_INTERVAL="$2"; shift 2 ;;
+        --url)        APP_URL="$2"; shift 2 ;;
+        --timeout)    TIMEOUT="$2"; shift 2 ;;
+        *)            shift ;;
+    esac
+done
+
+# ============================================================================
+# 日志
+# ============================================================================
+
+LOG_DIR="/tmp/.genie/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/check-app-accessibility.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
+}
+
+# ============================================================================
+# 等待
+# ============================================================================
+
+if [ "$WAIT_SECONDS" -gt 0 ] 2>/dev/null; then
+    log "等待 ${WAIT_SECONDS}s 让服务启动..."
+    sleep "$WAIT_SECONDS"
+fi
+
+# ============================================================================
+# 检测
+# ============================================================================
+
+retry=0
+last_error=""
+
+while [ $retry -lt $MAX_RETRIES ]; do
+    retry=$((retry + 1))
+    log "第 ${retry}/${MAX_RETRIES} 次检测 ${APP_URL}"
+
+    HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}|%{content_type}" \
+        --max-time "$TIMEOUT" \
+        --location \
+        "$APP_URL" 2>/dev/null) || {
+        last_error="无法连接到应用服务 ($APP_URL)，服务可能未启动"
+        log "连接失败: $last_error"
+        if [ $retry -lt $MAX_RETRIES ]; then
+            sleep "$RETRY_INTERVAL"
+            continue
+        fi
+        echo "$last_error"
+        exit 1
+    }
+
+    HTTP_CODE=$(echo "$HTTP_RESPONSE" | cut -d'|' -f1)
+    CONTENT_TYPE=$(echo "$HTTP_RESPONSE" | cut -d'|' -f2)
+
+    log "HTTP_CODE: $HTTP_CODE, CONTENT_TYPE: $CONTENT_TYPE"
+
+    if [ "$HTTP_CODE" -ge 500 ] 2>/dev/null; then
+        last_error="应用返回服务器错误 (HTTP $HTTP_CODE)，请检查应用代码和服务日志"
+        if [ $retry -lt $MAX_RETRIES ]; then sleep "$RETRY_INTERVAL"; continue; fi
+        echo "$last_error"; exit 1
+    fi
+
+    if [ "$HTTP_CODE" -ge 400 ] 2>/dev/null; then
+        last_error="应用返回客户端错误 (HTTP $HTTP_CODE)，请检查路由配置"
+        if [ $retry -lt $MAX_RETRIES ]; then sleep "$RETRY_INTERVAL"; continue; fi
+        echo "$last_error"; exit 1
+    fi
+
+    if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ] && [ "$HTTP_CODE" != "302" ] && [ "$HTTP_CODE" != "304" ]; then
+        last_error="应用返回异常状态码 (HTTP $HTTP_CODE)"
+        if [ $retry -lt $MAX_RETRIES ]; then sleep "$RETRY_INTERVAL"; continue; fi
+        echo "$last_error"; exit 1
+    fi
+
+    # 通过
+    log "应用可访问性检测通过 (HTTP $HTTP_CODE)"
+    exit 0
+done
+
+echo "$last_error"
+exit 1

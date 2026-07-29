@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "title": "阴门关·黄金样本",
+    "version": "1.0.0",
+    "start": "start_01"
+  },
+  "config": {
+    "title": "阴门关",
+    "subtitle": "一段关于选择与命运的互动叙事",
+    "poster": "https://cos.example.com/poster/main.jpg",
+    "theme": {
+      "mode": "dark",
+      "accent": "#8b1a1a",
+      "preset": "horror"
+    },
+    "audio": {
+      "bgm": "https://cos.example.com/bgm/main.mp3",
+      "bgmVolume": 0.7,
+      "sfxVolume": 1.0
+    },
+    "features": {
+      "backlog": true,
+      "gallery": false,
+      "inventory": false,
+      "autosave": true,
+      "saveSlots": 10
+    },
+    "skin": {
+      "choiceStyle": "ribbon",
+      "font": "serif",
+      "accent": "#8b1a1a"
+    },
+    "motion": {
+      "transition": "fade",
+      "choiceReveal": "stagger-fade",
+      "textStyle": "banner",
+      "intensity": "normal",
+      "reducedMotion": "auto"
+    }
+  },
+  "variables": {
+    "has_key": false,
+    "trust": 0,
+    "door_unlocked": false
+  },
+  "items": [
+    {
+      "id": "old_key",
+      "name": "生锈的钥匙",
+      "image": "https://cos.example.com/items/old_key.png"
+    },
+    {
+      "id": "lantern",
+      "name": "灯笼",
+      "image": "https://cos.example.com/items/lantern.png"
+    }
+  ],
+  "characters": [
+    {
+      "id": "hero",
+      "name": "行者",
+      "image": "https://cos.example.com/avatars/hero.png"
+    },
+    {
+      "id": "guardian",
+      "name": "守门人",
+      "image": "https://cos.example.com/avatars/guardian.png"
+    },
+    {
+      "id": "shadow",
+      "name": "黑影",
+      "image": "https://cos.example.com/avatars/shadow.png"
+    }
+  ],
+  "nodes": {
+    "start_01": {
+      "type": "start",
+      "text": "夜色如墨，你站在一座古老的城门前。城门上刻着三个字：阴门关。",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/opening.mp4",
+        "subtitle": "https://cos.example.com/subtitles/opening.vtt"
+      },
+      "speaker": "hero",
+      "next": "scene_01"
+    },
+    "scene_01": {
+      "type": "scene",
+      "text": "城门缓缓打开，一个苍老的声音从门后传来：\n「来了啊……我已经等了你很久了。」",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/gate_open.mp4",
+        "subtitle": "https://cos.example.com/subtitles/gate_open.vtt"
+      },
+      "speaker": "guardian",
+      "clipDuration": 30,
+      "next": "scene_02"
+    },
+    "scene_02": {
+      "type": "scene",
+      "text": "守门人拄着拐杖，站在门内昏暗的灯光下。他的眼睛闪烁着异样的光芒。\n「要进关，你得回答我一个问题。」",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/guardian.mp4",
+        "subtitle": "https://cos.example.com/subtitles/guardian.vtt"
+      },
+      "speaker": "guardian",
+      "clipDuration": 25,
+      "choiceAt": 20,
+      "choices": [
+        {
+          "label": "「什么问题？请说。」",
+          "next": "scene_03",
+          "effects": [{ "op": "set", "var": "trust", "value": 1 }]
+        },
+        {
+          "label": "「我不需要回答什么，让开。」",
+          "next": "scene_04"
+        }
+      ]
+    },
+    "scene_03": {
+      "type": "scene",
+      "text": "守门人满意地点了点头。\n「很久没有遇到这么有礼貌的人了。你可以在关内找到你要的东西，但小心……这里不只是你一个人。」",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/trust.mp4",
+        "subtitle": "https://cos.example.com/subtitles/trust.vtt"
+      },
+      "speaker": "guardian",
+      "effects": [{ "op": "add", "item": "lantern" }],
+      "clipDuration": 20,
+      "next": "scene_05"
+    },
+    "scene_04": {
+      "type": "scene",
+      "text": "守门人冷笑一声，侧身让开了一条路。\n「那就请吧，不过别怪我没提醒你——里面不太平。」",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/defy.mp4",
+        "subtitle": "https://cos.example.com/subtitles/defy.vtt"
+      },
+      "speaker": "guardian",
+      "clipDuration": 15,
+      "next": "scene_05"
+    },
+    "scene_05": {
+      "type": "scene",
+      "text": "你走进了阴门关。关内是一条狭长的街道，两侧的灯笼发出诡异的光。前方不远处，你看到一把钥匙躺在地上。",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/street.mp4",
+        "subtitle": "https://cos.example.com/subtitles/street.vtt"
+      },
+      "speaker": "hero",
+      "effects": [{ "op": "add", "item": "old_key" }],
+      "clipDuration": 20,
+      "choiceAt": 15,
+      "choices": [
+        {
+          "label": "捡起钥匙",
+          "next": "scene_06"
+        },
+        {
+          "label": "继续往前走，不理睬",
+          "next": "interaction_01"
+        }
+      ]
+    },
+    "scene_06": {
+      "type": "scene",
+      "text": "你捡起钥匙。钥匙入手冰凉，上面刻着古老的纹路。街道的尽头是一扇紧闭的铁门，锁孔的形状似乎和这把钥匙吻合。",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/pick_key.mp4",
+        "subtitle": "https://cos.example.com/subtitles/pick_key.vtt"
+      },
+      "speaker": "hero",
+      "effects": [{ "op": "set", "var": "has_key", "value": true }],
+      "clipDuration": 15,
+      "next": "interaction_01"
+    },
+    "interaction_01": {
+      "type": "interaction",
+      "interaction": "tap",
+      "text": "前方出现了一扇巨大的铁门。你需要找到打开它的方法。\n点击铁门尝试推开它。",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/iron_door.mp4",
+        "subtitle": "https://cos.example.com/subtitles/iron_door.vtt"
+      },
+      "speaker": "hero",
+      "clipDuration": 10,
+      "next": "scene_07"
+    },
+    "scene_07": {
+      "type": "scene",
+      "text": "铁门发出沉重的响声，缓缓打开。门后是一个巨大的殿堂，中央悬浮着一团黑色的雾。一个黑影从雾中走出。\n「你终于到了……我等这一刻很久了。」",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/hall.mp4",
+        "subtitle": "https://cos.example.com/subtitles/hall.vtt"
+      },
+      "speaker": "shadow",
+      "clipDuration": 25,
+      "choiceAt": 18,
+      "choices": [
+        {
+          "label": "「你是谁？为什么等我？」",
+          "next": "ending_01",
+          "condition": { "op": ">=", "var": "trust", "value": 1 }
+        },
+        {
+          "label": "「我不想和你废话。」",
+          "next": "ending_02"
+        },
+        {
+          "label": "举起钥匙，对准黑影",
+          "next": "ending_03",
+          "condition": { "op": "has", "item": "old_key" }
+        }
+      ]
+    },
+    "ending_01": {
+      "type": "ending",
+      "ending_type": "good",
+      "text": "黑影微微一笑，化作一缕青烟消散。\n殿堂中央出现了一面镜子，映出了你从未见过的景象——那是你内心深处最真实的自己。\n你明白了，阴门关不是一座城，而是一面照见内心的镜子。\n——好结局·明心见性",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/good_ending.mp4",
+        "subtitle": "https://cos.example.com/subtitles/good_ending.vtt"
+      },
+      "speaker": "shadow",
+      "transition": "fade"
+    },
+    "ending_02": {
+      "type": "ending",
+      "ending_type": "bad",
+      "text": "黑影发出一声冷笑，殿堂瞬间陷入黑暗。\n你感到一股无形的力量将你推向深渊……\n——坏结局·堕入黑暗",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/bad_ending.mp4",
+        "subtitle": "https://cos.example.com/subtitles/bad_ending.vtt"
+      },
+      "transition": "fade"
+    },
+    "ending_03": {
+      "type": "ending",
+      "ending_type": "hidden",
+      "text": "你举起钥匙，钥匙突然发出耀眼的光芒。黑影在光芒中发出痛苦的嘶吼。\n光芒散去，殿堂消失了，你发现自己站在一片花海中。\n钥匙化作一片花瓣，随风飘散。\n——隐藏结局·钥匙花开",
+      "media": {
+        "type": "video",
+        "src": "https://cos.example.com/video/hidden_ending.mp4",
+        "subtitle": "https://cos.example.com/subtitles/hidden_ending.vtt"
+      },
+      "speaker": "hero",
+      "transition": "fade"
+    }
+  }
+}

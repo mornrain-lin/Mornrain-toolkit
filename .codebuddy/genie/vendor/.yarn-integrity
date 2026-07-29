@@ -1,0 +1,19 @@
+{
+  "systemParams": "darwin-arm64-127",
+  "modulesFolders": [
+    "node_modules"
+  ],
+  "flags": [],
+  "linkedModules": [],
+  "topLevelPatterns": [
+    "@babel/parser@^7.23.0"
+  ],
+  "lockfileEntries": {
+    "@babel/helper-string-parser@^7.27.1": "https://mirrors.tencent.com/npm/@babel/helper-string-parser/-/helper-string-parser-7.27.1.tgz#54da796097ab19ce67ed9f88b47bb2ec49367687",
+    "@babel/helper-validator-identifier@^7.28.5": "https://mirrors.tencent.com/npm/@babel/helper-validator-identifier/-/helper-validator-identifier-7.28.5.tgz#010b6938fab7cb7df74aa2bbc06aa503b8fe5fb4",
+    "@babel/parser@^7.23.0": "https://mirrors.tencent.com/npm/@babel/parser/-/parser-7.28.6.tgz#f01a8885b7fa1e56dd8a155130226cd698ef13fd",
+    "@babel/types@^7.28.6": "https://mirrors.tencent.com/npm/@babel/types/-/types-7.28.6.tgz#c3e9377f1b155005bcc4c46020e7e394e13089df"
+  },
+  "files": [],
+  "artifacts": {}
+}

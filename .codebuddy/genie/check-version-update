@@ -1,0 +1,138 @@
+#!/bin/bash
+
+# ============================================================================
+# check-version-update.sh
+# Stop hook 脚本：检查代码变更后是否已调用 setup-info.sh 更新版本描述
+#
+# 原理：比较源代码文件的最后修改时间与 docs/project.json 的修改时间
+# - 如果有源代码文件比 project.json 更新 → exit 2（阻止 AI 停止，提醒补上）
+# - 如果 project.json 已是最新或不存在源代码变更 → exit 0（允许正常停止）
+#
+# Exit codes:
+#   0 - 版本信息已更新或无需更新，允许停止
+#   2 - 有代码变更但未更新版本信息，阻止停止并提醒 AI
+# ============================================================================
+
+PROJECT_ROOT="${CODEBUDDY_PROJECT_DIR:-.}"
+PROJECT_JSON="$PROJECT_ROOT/docs/project.json"
+
+# 读取 stdin（SessionWriteEnd payload）。stop_hook_active=true 表示本轮是上一轮
+# restart_session 触发的重跑——此时即使版本仍未更新也放行，避免无限重跑。
+INPUT=$(cat 2>/dev/null)
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; print('true' if json.load(sys.stdin).get('stop_hook_active') else 'false')" 2>/dev/null)
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+    exit 0
+fi
+
+# 源代码子目录名（在项目根目录或 monorepo 子项目中查找）
+SOURCE_DIRS=("src" "app" "pages" "components" "lib" "utils" "services" "api" "server" "client" "public" "prisma" "config" "scenes" "slides")
+
+# monorepo / 模板子项目根目录
+# - frontend/backend: web, prototype, miniprogram, ifg, ai-* 模板
+# - game-basic: game-2d, game-3d 模板
+# - packages/apps: 通用 monorepo 结构
+MONOREPO_ROOTS=("frontend" "backend" "game-basic" "packages" "apps")
+
+# 源代码文件扩展名
+SOURCE_EXTENSIONS=("ts" "tsx" "js" "jsx" "vue" "svelte" "css" "scss" "less" "html" "json" "py" "go" "java" "rb" "prisma")
+
+# ============================================================================
+# 如果 project.json 不存在，说明项目还没初始化，不拦截
+# ============================================================================
+if [ ! -f "$PROJECT_JSON" ]; then
+    exit 0
+fi
+
+# ============================================================================
+# 获取 project.json 的修改时间（秒级时间戳）
+# ============================================================================
+if [[ "$(uname)" == "Darwin" ]]; then
+    PROJECT_JSON_MTIME=$(stat -f %m "$PROJECT_JSON" 2>/dev/null)
+else
+    PROJECT_JSON_MTIME=$(stat -c %Y "$PROJECT_JSON" 2>/dev/null)
+fi
+
+if [ -z "$PROJECT_JSON_MTIME" ]; then
+    exit 0
+fi
+
+# ============================================================================
+# 构建搜索目录列表：
+# 1. 项目根目录下的源码目录（如 src/, app/）
+# 2. monorepo 子项目中的源码目录（如 frontend/src/, backend/prisma/）
+# ============================================================================
+ALL_SEARCH_DIRS=()
+
+# 根目录下的源码目录
+for dir in "${SOURCE_DIRS[@]}"; do
+    dir_path="$PROJECT_ROOT/$dir"
+    [ -d "$dir_path" ] && ALL_SEARCH_DIRS+=("$dir_path")
+done
+
+# monorepo 子项目中的源码目录
+for root in "${MONOREPO_ROOTS[@]}"; do
+    root_path="$PROJECT_ROOT/$root"
+    [ -d "$root_path" ] || continue
+    for dir in "${SOURCE_DIRS[@]}"; do
+        dir_path="$root_path/$dir"
+        [ -d "$dir_path" ] && ALL_SEARCH_DIRS+=("$dir_path")
+    done
+done
+
+# 如果没有找到任何源码目录，不拦截
+if [ ${#ALL_SEARCH_DIRS[@]} -eq 0 ]; then
+    exit 0
+fi
+
+# ============================================================================
+# 在所有搜索目录中查找比 project.json 更新的文件
+# ============================================================================
+FOUND_NEWER=false
+
+for dir_path in "${ALL_SEARCH_DIRS[@]}"; do
+    # 构建扩展名匹配参数
+    FIND_ARGS=()
+    first=true
+    for ext in "${SOURCE_EXTENSIONS[@]}"; do
+        if [ "$first" = true ]; then
+            FIND_ARGS+=("-name" "*.${ext}")
+            first=false
+        else
+            FIND_ARGS+=("-o" "-name" "*.${ext}")
+        fi
+    done
+
+    # 查找比 project.json 更新的源文件
+    NEWER_FILES=$(find "$dir_path" \( "${FIND_ARGS[@]}" \) -newer "$PROJECT_JSON" -type f 2>/dev/null | head -5)
+
+    if [ -n "$NEWER_FILES" ]; then
+        FOUND_NEWER=true
+        break
+    fi
+done
+
+# ============================================================================
+# 判断结果
+# ============================================================================
+if [ "$FOUND_NEWER" = true ]; then
+    # 输出 restart_session：sandbox-proxy 据此构造 session/prompt 重跑，提醒 AI 补版本描述。
+    # SessionWriteEnd 事件不支持 exit 2 阻断，统一 exit 0。
+    # 重跑后本脚本会收到 stop_hook_active=true（开头已短路放行），不会无限重跑。
+    REMINDER_MSG=$(cat << 'EOF'
+<system-reminder>
+You modified source code files but did not update the version description. Please run setup-info.sh before finishing:
+
+./.genie/scripts/bash/setup-info.sh --name "PROJECT_NAME" --app-slug "APP_SLUG" --preview-type pc|mobile "VERSION_DESCRIPTION"
+
+- PROJECT_NAME: Limit to 5 words (can omit if project.json already has a name)
+- APP_SLUG: DNS-compliant identifier, 1-32 chars, lowercase letters/digits/hyphens only (required for first run, can omit afterwards)
+- VERSION_DESCRIPTION: Limit to 10 words, always starts with an action verb (e.g. "Add user login page", "Fix navigation bar style")
+</system-reminder>
+EOF
+)
+    python3 -c "import json,sys; print(json.dumps({'continue': True, 'restart_session': {'message': sys.argv[1]}}))" "$REMINDER_MSG"
+    exit 0
+fi
+
+# 版本信息已更新或无源代码变更
+exit 0

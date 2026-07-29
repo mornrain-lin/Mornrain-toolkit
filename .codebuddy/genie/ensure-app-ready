@@ -1,0 +1,164 @@
+#!/bin/bash
+# 重启应用 + 就绪性检测 + 路由解析 + 截图 协调脚本
+# 作为 Stop Hook 使用
+#
+# 执行流程：
+# 1. 校验项目配置和先决条件
+# 2. 调用 /__genie__/restart 重启应用并检测就绪性
+# 3. 执行 parse-routes 生成 pages.json
+# 4. 后台截图
+#
+# Hook 响应协议：
+# stdout 输出 JSON: {"continue": bool, "reason": "string"}
+# exit 0 = 正常通过, exit 2 = 阻断 AI
+
+set -uo pipefail
+
+# ============================================================================
+# 日志
+# ============================================================================
+
+LOG_DIR="/tmp/.genie/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/ensure-app-ready.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
+}
+
+# ============================================================================
+# Hook 响应输出
+# ============================================================================
+
+# 输出 Hook JSON 响应到 stdout
+# 用法: hook_result <continue:true|false> <reason>
+hook_result() {
+    local continue_val="$1"
+    local reason="$2"
+    # 转义 reason 中的特殊字符用于 JSON
+    local escaped_reason
+    escaped_reason=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$reason" 2>/dev/null)
+    echo "{\"continue\": ${continue_val}, \"reason\": ${escaped_reason}}"
+}
+
+# 输出 SessionWriteEnd 重跑响应到 stdout（替代原 Stop hook 的 exit 2 阻断）
+# SessionWriteEnd 事件不支持 exit 2 阻断，改由 sandbox-proxy 解析 restart_session.message
+# 后构造 session/prompt 重跑。脚本始终 exit 0。
+# 用法: restart_result <message>
+restart_result() {
+    local message="$1"
+    local escaped_message
+    escaped_message=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$message" 2>/dev/null)
+    echo "{\"continue\": true, \"restart_session\": {\"message\": ${escaped_message}}}"
+}
+
+log "========== 脚本开始执行 =========="
+
+# ============================================================================
+# 读取 stdin
+# ============================================================================
+
+INPUT=$(cat)
+log "stdin INPUT: ${INPUT}"
+
+PROJECT_DIR="${CODEBUDDY_PROJECT_DIR:-.}"
+CLOUDSTUDIO_CONFIG="$PROJECT_DIR/.cloudstudio"
+
+# ============================================================================
+# 先决条件检查
+# ============================================================================
+
+if [ ! -f "$CLOUDSTUDIO_CONFIG" ]; then
+    log "未找到 .cloudstudio 配置，跳过"
+    exit 0
+fi
+
+# ============================================================================
+# 定位自身所在目录（用于调用同目录下的其他脚本）
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ============================================================================
+# 重启应用并检测就绪性
+# ============================================================================
+
+# 解析 stop_hook_active：为 true 表示已阻止过一次，跳过检测
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; print('true' if json.load(sys.stdin).get('stop_hook_active') else 'false')" 2>/dev/null)
+
+RESTART_URL="http://127.0.0.1:55221/__genie__/restart"
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+    RESTART_URL="${RESTART_URL}?skipCheck=true"
+    log "stop_hook_active=true，跳过就绪性检测"
+fi
+
+# 前台最多等待 restart（含就绪性检测）的秒数。
+# 就绪检测内部最坏耗时可达 restart + 端口检测(10s) + 前端错误检测(30s)，远超外层
+# hook 的 30s 硬超时；一旦前台把整段等满，hook 会被强杀在 parse-routes 之前，导致
+# pages.json 不生成、预览页拉 docs/pages.json 404（偶现，取决于应用冷/热启动快慢）。
+# 因此这里给 restart 一个 20s 前台窗口：窗口内返回就照常解析 success/reason；
+# 超时（124）则直接放行、继续往下执行 parse-routes（不重发请求）—— parse-routes 只
+# 静态解析路由文件生成 pages.json，不依赖应用真正就绪，本就不该被就绪检测的超时拖死。
+RESTART_FG_TIMEOUT=20
+
+RESTART_RESPONSE_FILE=$(mktemp 2>/dev/null || echo "/tmp/.genie-restart-$$.json")
+log "调用 ${RESTART_URL} 重启应用（前台最多等 ${RESTART_FG_TIMEOUT}s）..."
+timeout "$RESTART_FG_TIMEOUT" curl -s -X POST "$RESTART_URL" > "$RESTART_RESPONSE_FILE" 2>&1
+CURL_EXIT_CODE=$?
+RESTART_RESPONSE=$(cat "$RESTART_RESPONSE_FILE" 2>/dev/null)
+rm -f "$RESTART_RESPONSE_FILE" 2>/dev/null
+log "restart 响应 (curl exit: ${CURL_EXIT_CODE}): ${RESTART_RESPONSE}"
+
+if [ "$CURL_EXIT_CODE" -eq 124 ]; then
+    # 前台超时：restart/就绪检测未在 20s 内完成。不重发请求，直接放行、继续执行
+    # parse-routes，避免整个 hook 被外层 30s 超时强杀导致 pages.json 缺失。
+    log "restart 前台超时（${RESTART_FG_TIMEOUT}s），跳过就绪检测结果，继续执行 parse-routes"
+elif [ "$CURL_EXIT_CODE" -ne 0 ]; then
+    # curl 连接失败（如 ProxyServer 未启动），重跑并提示
+    log "基础网关设施未启动 (curl exit: ${CURL_EXIT_CODE})"
+    restart_result "<system-reminder>基础网关设施未启动，无法正常跳转预览，请保持沉默，当用户询问时请友好的向用户提示在反馈区域填写反馈帮助我们定位。</system-reminder>"
+    exit 0
+else
+    # 解析 success 字段
+    RESTART_SUCCESS=$(echo "$RESTART_RESPONSE" | python3 -c "import sys,json; print('true' if json.load(sys.stdin).get('success') else 'false')" 2>/dev/null)
+
+    if [ "$RESTART_SUCCESS" != "true" ]; then
+        # 提取 reason 字段
+        RESTART_REASON=$(echo "$RESTART_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('reason', ''))" 2>/dev/null)
+        log "重启检测失败: ${RESTART_REASON}"
+        restart_result "<system-reminder>自动重启失败：${RESTART_REASON}</system-reminder>"
+        exit 0
+    fi
+
+    log "应用重启并就绪性检测通过"
+fi
+
+# ============================================================================
+# 解析路由生成 pages.json
+# ============================================================================
+
+log "执行 parse-routes..."
+if [ -f "$SCRIPT_DIR/parse-routes" ]; then
+    PARSE_OUTPUT=$("$SCRIPT_DIR/parse-routes" -r . 2>&1) || {
+        log "parse-routes 失败: ${PARSE_OUTPUT}（不影响后续流程）"
+    }
+    log "parse-routes 结果: ${PARSE_OUTPUT}"
+else
+    log "parse-routes 不存在，跳过"
+fi
+
+# ============================================================================
+# 截图（后台运行）
+# ============================================================================
+
+SCREENSHOT_SCRIPT="$PROJECT_DIR/.genie/scripts/python/capture_screenshot.py"
+SCREENSHOT_OUTPUT="$PROJECT_DIR/docs/posters/app/app-poster.png"
+
+if [ -f "$SCREENSHOT_SCRIPT" ]; then
+    log "后台截图: $SCREENSHOT_OUTPUT"
+    python3 "$SCREENSHOT_SCRIPT" "$SCREENSHOT_OUTPUT" > /dev/null 2>&1 &
+else
+    log "截图脚本不存在，跳过"
+fi
+
+echo '{"continue": true}'

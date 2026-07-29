@@ -1,0 +1,80 @@
+---
+description: Genie service troubleshooting guide — step-by-step diagnosis for common runtime errors
+globs: "**"
+---
+
+# Genie Troubleshooting Guide
+
+Read this file when you encounter service errors, Hook blockages, or unexpected behavior in the Genie environment. Each section covers a specific error category with diagnostic steps.
+
+## 1. Frontend Compile Errors (Vite build failures)
+
+**Symptoms**: White screen, Vite error overlay in preview, `frontend` logs show compilation errors.
+
+**Diagnostic steps**:
+1. Check frontend logs: `curl http://localhost:55221/__genie__/logs/frontend?lines=80`
+2. Look for `SyntaxError`, `Module not found`, or `Cannot resolve` patterns
+3. Common causes:
+   - Missing import statement or typo in import path
+   - Missing dependency — run `cd frontend && pnpm install <package>`
+   - TypeScript type error — read the exact error, fix the type mismatch
+4. After fixing, the app will hot-reload automatically. Do NOT manually restart.
+
+## 2. Backend Startup Failures (Express won't start)
+
+**Symptoms**: `/api` requests return 502 or connection refused, backend logs show crash.
+
+**Diagnostic steps**:
+1. Check backend logs: `curl http://localhost:55221/__genie__/logs/backend?lines=80`
+2. Common causes:
+   - Port 3000 already in use — check for orphan processes
+   - Missing environment variable — verify `.env` file has all required keys
+   - Prisma schema out of sync — run `cd backend && npx prisma db push`
+   - Syntax error in route handler — read the stack trace for file and line number
+3. After fixing, restart: `curl -XPOST http://localhost:55221/__genie__/restart`
+
+## 3. Database Connection Errors (PostgreSQL)
+
+**Symptoms**: Backend logs show `ECONNREFUSED :5432`, Prisma errors, or "relation does not exist".
+
+**Diagnostic steps**:
+1. Check if the PostgreSQL container is running: `docker ps --filter name=postgres`
+   - If not running: `docker start postgres`
+2. Verify database is accepting connections: `docker exec postgres pg_isready -U postgres`
+   - Note: `pg_isready` is only available inside the container, NOT on the host
+3. Check connection string in backend `.env` — default is `postgres://postgres:Tencent2025@localhost:5432/genie?schema=public` (Docker maps container port 5432 to host)
+4. Common causes:
+   - Docker container stopped or crashed — `docker logs postgres` to check
+   - Schema not pushed — run `cd backend && npx prisma db push`
+   - Migration conflict — run `cd backend && npx prisma migrate reset` (WARNING: drops all data)
+5. After fixing, restart backend: `curl -XPOST http://localhost:55221/__genie__/restart`
+
+## 4. Hook Blockage (AppReadinessChecker failures)
+
+**Symptoms**: After code changes, the Stop Hook blocks your next action with exit code 2.
+
+**Diagnostic steps**:
+1. Read the hook output for clues on what failed
+2. **HTTP accessibility failure**:
+   - Frontend didn't respond (`/` didn't return 200) — see Section 1
+3. **Frontend runtime errors**:
+   - `fetch_monitor_errors.py --consume` detected JavaScript errors in the browser
+   - Check frontend logs for the specific error
+   - Common causes: undefined variable, failed API call crashing the UI, missing route component
+4. Fix the underlying error, then your next action will trigger the hook again automatically.
+
+## 5. Proxy Chain Problems (routing/404 issues)
+
+**Symptoms**: API calls return 404, CORS errors, or "connection refused" in browser console.
+
+**Diagnostic steps**:
+1. **Backend 404 on `/api/*`**:
+   - The proxy chain is: Browser → :55221 → :5173 → (Vite proxy) → :3000
+   - Check `frontend/vite.config.ts` for proxy configuration — it must include a `/api` proxy to `http://localhost:3000`
+   - If the route exists in backend but returns 404, verify the route path matches exactly
+2. **55221 not responding**:
+   - The dev server (ProxyServer) may have crashed — check terminal output
+   - Restart via: `curl -XPOST http://localhost:55221/__genie__/restart`
+3. **CORS errors**:
+   - In Genie's architecture, frontend and backend share the same origin through the proxy — CORS should not occur
+   - If you see CORS errors, the frontend is likely calling the backend directly on :3000 instead of through the proxy. Fix the URL to use relative paths (e.g., `/api/...` not `http://localhost:3000/api/...`)
