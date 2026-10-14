@@ -1,4 +1,4 @@
-![Mornrain-toolkit](assets/preview.png)
+![Mornrain-toolkit](assets/home.png)
 
 # Mornrain ToolKit
 
@@ -13,17 +13,11 @@
 
 ---
 
-## 预览
+## 界面预览
 
-![Mornrain ToolKit 首页](./docs/screenshots/home.png)
-
-*首页：分类展示 + 搜索，深色主题*
-
-![JSON 格式化工具](./docs/screenshots/tool.png)
-
-*工具页：统一的头部、清晰的布局、即时的本地处理*
-
----
+| 首页 | JSON 格式化 | 二维码生成 |
+| --- | --- | --- |
+| ![首页](assets/home.png) | ![JSON 格式化](assets/feature1.png) | ![二维码生成](assets/feature2.png) |
 
 ## 核心特性
 
